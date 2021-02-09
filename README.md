@@ -25,10 +25,11 @@ make
 
 Then try to run `python/test_python_only.py` and `ruby/test_ruby_only.rb`. Both should work.
 
-
 Install the pycall ruby gem: `gem install pycall -v '1.2.1'`.
 
 Then try `ruby/test_pycall.rb` and see it fail...
+
+All of these tests are also registered as `CTest`, so you can run the entire test suite via `make test` or `ctest` (`ctest -C Release` on Windows)
 
 
 ### TL;DR: More context

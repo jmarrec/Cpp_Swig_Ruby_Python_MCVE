@@ -144,6 +144,10 @@ find_package(SWIG REQUIRED COMPONENTS python ruby csharp)
 message("${SWIG_USE_FILE}")
 include(${SWIG_USE_FILE})
 
+enable_testing()
+include(CTest)
+
+
 if (BUILD_PYTHON_BINDINGS)
 
   set(swig_target_name ${swig_target_name}_python)
@@ -173,6 +177,13 @@ if (BUILD_PYTHON_BINDINGS)
   if (MSVC)
     swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
   endif()
+
+  add_test(
+    NAME test_ruby_only
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+    COMMAND ${Ruby_EXECUTABLE} test_ruby_only.rb
+  )
+
 endif()
 
 if(BUILD_RUBY_BINDINGS)
@@ -197,5 +208,28 @@ if(BUILD_RUBY_BINDINGS)
   set_target_properties(${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ruby/")
 
   swig_link_libraries(${swig_target_name} ${target_name} ${Ruby_LIBRARIES})
+
+  add_test(
+    NAME test_python_only
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
+    COMMAND ${Python_EXECUTABLE} test_python_only.py
+  )
+
+endif()
+
+
+if(BUILD_RUBY_BINDINGS AND BUILD_PYTHON_BINDINGS)
+
+  add_test(
+    NAME test_pycall
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+    COMMAND ${Ruby_EXECUTABLE} test_pycall.rb
+  )
+
+  add_test(
+    NAME test_pycall_workaround
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+    COMMAND ${Ruby_EXECUTABLE} test_pycall_workaround.rb
+  )
 
 endif()
