@@ -120,7 +120,7 @@ target_link_libraries(Test
 #######################################################################
 
 
-option(BUILD_RUBY_BINDINGS "Build Ruby bindings" OFF)
+option(BUILD_RUBY_BINDINGS "Build Ruby bindings" ON)
 
 # Build CSharp bindings
 option(BUILD_CSHARP_BINDINGS "Build CSharp bindings" OFF)
@@ -140,7 +140,7 @@ foreach (SWIG_FILE ${${target_name}_swig_src})
   set_source_files_properties(${SWIG_FILE} PROPERTIES CPLUSPLUS ON)
 endforeach()
 
-find_package(SWIG 4.0 REQUIRED COMPONENTS python ruby csharp)
+find_package(SWIG REQUIRED COMPONENTS python ruby csharp)
 message("${SWIG_USE_FILE}")
 include(${SWIG_USE_FILE})
 
@@ -176,7 +176,7 @@ if (BUILD_PYTHON_BINDINGS)
 endif()
 
 if(BUILD_RUBY_BINDINGS)
-  find_package(Ruby 2.5.1 REQUIRED)
+  find_package(Ruby REQUIRED)
 
   include_directories(SYSTEM ${Ruby_INCLUDE_DIRS})
 
