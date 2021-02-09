@@ -94,7 +94,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${PROJECT_BINARY_DIR}" "${PRO
 #           R E G U L A R    O U P U T    A N D    L I B S            #
 #######################################################################
 
-set(target_name MyLib)
+set(target_name mylib)
 
 set(${target_name}_src
   Person.hpp
@@ -144,16 +144,15 @@ find_package(SWIG 4.0 REQUIRED COMPONENTS python ruby csharp)
 message("${SWIG_USE_FILE}")
 include(${SWIG_USE_FILE})
 
-set(swig_target_name ${target_name})
-
 if (BUILD_PYTHON_BINDINGS)
+
+  set(swig_target_name ${swig_target_name}_python)
+
   find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
   include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 
-  set(swig_target person)
-
-  swig_add_library(${swig_target}
+  swig_add_library(${swig_target_name}
     TYPE MODULE
     LANGUAGE python
     OUTPUT_DIR "${PROJECT_BINARY_DIR}/Products/python"
@@ -161,15 +160,42 @@ if (BUILD_PYTHON_BINDINGS)
     SOURCES ${${target_name}_swig_src}
   )
 
-  set_target_properties(${swig_target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/python/")
-  set_target_properties(${swig_target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python/")
-  set_target_properties(${swig_target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python/")
+  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME ${target_name})
+
+  set_target_properties(${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/python/")
+  set_target_properties(${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python/")
+  set_target_properties(${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python/")
 
 
-  swig_link_libraries(${swig_target} ${target_name})
+  swig_link_libraries(${swig_target_name} ${target_name})
 
 
   if (MSVC)
-    swig_link_libraries(${swig_target} PRIVATE Python::Module)
+    swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
   endif()
+endif()
+
+if(BUILD_RUBY_BINDINGS)
+  find_package(Ruby 2.5.1 REQUIRED)
+
+  include_directories(SYSTEM ${Ruby_INCLUDE_DIRS})
+
+  set(swig_target_name ${target_name}_ruby)
+
+  swig_add_library(${swig_target_name}
+    TYPE MODULE
+    LANGUAGE ruby
+    OUTPUT_DIR "${PROJECT_BINARY_DIR}/Products/ruby"
+    OUTFILE_DIR "${PROJECT_BINARY_DIR}/ruby_wrapper"
+    SOURCES ${${target_name}_swig_src}
+  )
+
+  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME ${target_name})
+
+  set_target_properties(${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/ruby/")
+  set_target_properties(${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ruby/")
+  set_target_properties(${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ruby/")
+
+  swig_link_libraries(${swig_target_name} ${target_name} ${Ruby_LIBRARIES})
+
 endif()

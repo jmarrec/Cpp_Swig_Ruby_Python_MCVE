@@ -1,7 +1,7 @@
 #ifndef PERSON_I
 #define PERSON_I
 
-%module person
+%module mylib
 
 %include <stl.i>
 %include <std_string.i>
