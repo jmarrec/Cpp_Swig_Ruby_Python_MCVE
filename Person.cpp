@@ -7,6 +7,9 @@ namespace Test {
 Person::Person(const std::string& t_name) noexcept
   : m_name(t_name) { }
 
+Person::Person(const Person& other)
+  : m_name(other.m_name) { }
+
 
 std::string Person::getName() const {
   return m_name;

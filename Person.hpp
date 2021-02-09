@@ -11,6 +11,8 @@ class Person {
 
     Person(const std::string& name) noexcept;
 
+    Person(const Person& other);
+
     std::string getName() const;
     bool setName(const std::string& t_newName);
   private:
