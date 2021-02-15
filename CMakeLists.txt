@@ -232,4 +232,11 @@ if(BUILD_RUBY_BINDINGS AND BUILD_PYTHON_BINDINGS)
     COMMAND ${Ruby_EXECUTABLE} test_pycall_workaround.rb
   )
 
+  add_test(
+    NAME test_pycall_use_cpp_to_convert_pointers
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+    COMMAND ${Ruby_EXECUTABLE} test_pycall_use_cpp_to_convert_pointers.rb
+  )
+
+
 endif()
