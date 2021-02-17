@@ -29,6 +29,21 @@ inline void setName(Person &p, const std::string &newname) {
   p.setName(newname);
 }
 
+// get an integral representation of the pointer that is this Person
+inline long long toInt(Person &p) {
+  std::clog << "original pointer: " << &p << '\n';
+  const auto result = reinterpret_cast<long long>(&p);
+  std::clog << "toInt from C++ " << result << '\n';
+  return result;
+}
+
+// take the integer from toInt and reinterpret_cast it back into a Person *, then return that as a reference
+inline Person &fromInt(long long i) {
+  auto *ptr = reinterpret_cast<Person *>(i);
+  std::clog << "Reclaimed pointer: " << ptr << '\n';
+  return *ptr;
+}
+
 } // Namespace Test
 
 #endif // ifndef PERSON_HPP
