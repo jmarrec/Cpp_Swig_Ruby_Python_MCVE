@@ -16,6 +16,7 @@ class Person {
 
     std::string getName() const;
     bool setName(const std::string& t_newName);
+
   private:
     std::string m_name;
 };
@@ -42,7 +43,6 @@ inline Person &fromInt(long long i) {
   std::clog << "Reclaimed pointer: " << ptr << '\n';
   return *ptr;
 }
-
 
 } // Namespace Test
 
