@@ -11,6 +11,9 @@
   #include <Person.hpp>
 %}
 
+%ignore Test::Person::illuminanceMapMaxValue(std::string const &, double&, double&) const;
+
+
 %include <Person.hpp>
 
 %extend Test::Person {

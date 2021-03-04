@@ -17,6 +17,8 @@ class Person {
     std::string getName() const;
     bool setName(const std::string& t_newName);
 
+    void illuminanceMapMaxValue(const std::string& name, double& minValue, double& maxValue) const;
+
   private:
     std::string m_name;
 };
