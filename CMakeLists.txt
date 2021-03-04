@@ -99,6 +99,8 @@ set(target_name mylib)
 set(${target_name}_src
   Person.hpp
   Person.cpp
+  String.hpp
+  String.cpp
 )
 
 add_library(${target_name} ${${target_name}_src})

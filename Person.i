@@ -9,12 +9,14 @@
 %{
   #include <sstream>
   #include <Person.hpp>
+  #include <String.hpp>
 %}
 
 %ignore Test::Person::illuminanceMapMaxValue(std::string const &, double&, double&) const;
 
 
 %include <Person.hpp>
+%include <String.hpp>
 
 %extend Test::Person {
   // Use the overloaded operator<< for string representation
