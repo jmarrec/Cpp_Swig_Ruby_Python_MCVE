@@ -245,3 +245,93 @@ if(BUILD_RUBY_BINDINGS AND BUILD_PYTHON_BINDINGS)
   )
 
 endif()
+
+
+if(BUILD_CSHARP_BINDINGS)
+
+
+  set(swig_target_name ${target_name}_csharp)
+
+  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/csharp_wrapper/generated_sources")
+
+  # TODO: I have no clue what the Products/csharp/mylib.so actually is...
+  swig_add_library(${swig_target_name}
+    TYPE MODULE   # OR SHARED?
+    LANGUAGE CSharp
+    OUTPUT_DIR "${PROJECT_BINARY_DIR}/csharp_wrapper/generated_sources"
+    OUTFILE_DIR "${PROJECT_BINARY_DIR}/csharp_wrapper"
+    SOURCES ${${target_name}_swig_src}
+  )
+
+  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME ${target_name})
+
+  set_target_properties(${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/csharp")
+  set_target_properties(${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/csharp/")
+  set_target_properties(${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/csharp/")
+
+  swig_link_libraries(${swig_target_name} ${target_name}) # ${Ruby_LIBRARIES})
+
+  set_target_properties(${swig_target_name} PROPERTIES SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+
+  set(CSHARP_VERSION_MAJOR 0)
+  set(CSHARP_VERSION_MINOR 0)
+  set(CSHARP_VERSION_PATCH 1)
+  set(CSHARP_VERSION_BUILD 0)
+
+  if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(CSHARP_PLATFORM "x64")
+  else()
+    set(CSHARP_PLATFORM "x86")
+  endif()
+
+  set(CSHARP_ASSEMBLY_VERSION "${CSHARP_VERSION_MAJOR}.${CSHARP_VERSION_MINOR}.${CSHARP_VERSION_PATCH}.${CSHARP_VERSION_BUILD}")
+
+  set(CSHARP_TOOLS_VERSION "4.5")
+
+
+  if (MSVC)
+    # Untested, but maybe works?
+    enable_language(CSharp)
+    add_library(example_cs SHARED  $<TARGET_PROPERTY:${swig_target_name},SWIG_SUPPORT_FILES>)
+    set_target_properties(example_cs PROPERTIES LINKER_LANGUAGE CSharp)
+    set_target_properties(example_cs PROPERTIES DOTNET_TARGET_FRAMEWORK "netcoreapp3.1")
+  else()
+    find_program(DOTNET dotnet)
+    if(NOT DOTNET)
+      message(FATAL_ERROR "C# generation outside of MSVC requires .NET Core (dotnet)")
+    endif()
+
+
+
+    file(TO_NATIVE_PATH "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/csharp" CSHARP_LIBRARY_OUTPUT_DIRECTORY)
+    file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/csharp" CSHARP_SOURCE_DIR)
+    file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/csharp_wrapper" CSHARP_BINARY_DIR)
+
+
+    file(MAKE_DIRECTORY "${CSHARP_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/netcoreapp3.0")
+
+    # TODO: there are probably adjustments to make to Mylib.csproj_dotnet.in
+    # The Release/Debug can be stripped probably
+    # Also probably don't need to use multiple `<TargetFrameworks>` which is the reason there's an extra netcoreapp3.0/ level
+    set(OPENSTUDIO_CSHARP_DLL "${CSHARP_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/netcoreapp3.0/mylib.dll")
+
+    # ignore deprecated warnings since we will export deprecated methods
+    add_definitions(-Wno-deprecated-declarations)
+
+    configure_file("${PROJECT_SOURCE_DIR}/csharp/Mylib.csproj_dotnet.in" "${PROJECT_BINARY_DIR}/csharp_wrapper/Mylib.csproj")
+
+    # custom command to make OPENSTUDIO_CSHARP_DLL
+    add_custom_command(TARGET ${swig_target_name}
+      POST_BUILD
+      COMMAND "${DOTNET}" "build" "-c" "$<CONFIGURATION>" "-f" "netcoreapp3.0" "${PROJECT_BINARY_DIR}/csharp_wrapper/Mylib.csproj"
+    )
+
+  endif()
+
+  #add_test(
+    #NAME test_python_only
+    #WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
+    #COMMAND ${Python_EXECUTABLE} test_python_only.py
+  #)
+
+endif()
