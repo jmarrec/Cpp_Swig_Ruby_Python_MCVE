@@ -90,6 +90,47 @@ set(LIBRARY_SEARCH_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "${CMAKE_LIBRAR
 # search for modules in the root dir to override cmake ones
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/CMake")
 
+
+
+#######################################################################
+#                              C O N A N                              #
+#######################################################################
+
+set(CMAKE_CONAN_EXPECTED_HASH 170c3250029af321395135a3952a9045)
+set(CMAKE_CONAN_VERSION "v0.16.1")
+
+if(EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+  file(MD5 "${CMAKE_BINARY_DIR}/conan.cmake" CMAKE_CONAN_HASH)
+endif()
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake" OR NOT "${CMAKE_CONAN_HASH}" MATCHES "${CMAKE_CONAN_EXPECTED_HASH}")
+  # Put it in CMAKE_BINARY_DIR so we don't end up with two when building OpenStudioApplication
+  message(STATUS "openstudio: Downloading conan.cmake ${CMAKE_CONAN_VERSION} from https://github.com/conan-io/cmake-conan")
+  file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/${CMAKE_CONAN_VERSION}/conan.cmake"
+     "${CMAKE_BINARY_DIR}/conan.cmake")
+else()
+  message(STATUS "openstudio: using existing conan.cmake")
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+conan_check(VERSION 1.28.0 REQUIRED)
+
+message(STATUS "RUNNING CONAN")
+
+# list(APPEND CONAN_OPTIONS "")
+list(APPEND CONAN_BUILD "missing")
+
+conan_cmake_run(REQUIRES
+  swig/4.0.2
+  jsoncpp/1.9.3
+  BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
+  OPTIONS ${CONAN_OPTIONS}
+  BUILD ${CONAN_BUILD}
+  # Passes `-u, --update`    to conan install: Check updates exist from upstream remotes
+  # That and build=outdated should ensure we track the right
+  UPDATE
+)
+
 #######################################################################
 #           R E G U L A R    O U P U T    A N D    L I B S            #
 #######################################################################
@@ -106,10 +147,17 @@ set(${target_name}_src
   String.hpp
   String.cpp
   Time.hpp
+  JsonCpp.hpp
+  JsonCpp.cpp
+)
+
+set(${target_name}_depends
+  CONAN_PKG::jsoncpp
 )
 
 add_library(${target_name} ${${target_name}_src})
 target_link_libraries(${target_name}
+  PUBLIC
   ${${target_name}_depends}
 )
 # Executable
@@ -139,8 +187,9 @@ option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
 
 # lib swig files
 set(${target_name}_swig_src
-  Person.i
+  # Person.i
   # Time.i
+  JsonCpp.i
 )
 
 foreach (SWIG_FILE ${${target_name}_swig_src})
