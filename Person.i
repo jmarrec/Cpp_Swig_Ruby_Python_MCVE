@@ -5,20 +5,31 @@
 
 %include <stl.i>
 %include <std_string.i>
+%include <CommonImport.i>
+
+#ifdef SWIGCSHARP
+  // Help in overload resolution
+  %ignore test::toString(const char*);
+  %ignore test::toString(const std::wstring&);
+  %ignore test::toString(const wchar_t*);
+  %ignore test::toString(std::istream&);
+  %ignore test::toWString(const std::string&);
+#endif
 
 %{
+  #include <cwchar>
   #include <sstream>
+  #include <string>
   #include <Person.hpp>
   #include <String.hpp>
 %}
 
-%ignore Test::Person::illuminanceMapMaxValue(std::string const &, double&, double&) const;
-
+%ignore test::Person::illuminanceMapMaxValue(std::string const &, double&, double&) const;
 
 %include <Person.hpp>
 %include <String.hpp>
 
-%extend Test::Person {
+%extend test::Person {
   // Use the overloaded operator<< for string representation
   std::string __str__() {
     std::ostringstream os;
@@ -39,8 +50,8 @@
 
   #ifdef SWIGPYTHON
     // take the integer from toInt and reinterpret_cast it back into a Person *, then return that as a reference
-    static inline Test::Person& _fromInt(long long i) {
-      auto *ptr = reinterpret_cast<Test::Person *>(i);
+    static inline test::Person& _fromInt(long long i) {
+      auto *ptr = reinterpret_cast<test::Person *>(i);
       std::clog << "Reclaimed pointer: " << ptr << '\n';
       return *ptr;
     }

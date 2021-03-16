@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <cmath>
 
-namespace Test {
+namespace test {
 
 /** char* to std::string. */
 std::string toString(const char* s) {
@@ -83,4 +83,4 @@ std::string toString(const std::wstring& utf16_string) {
 #endif
 }
 
-}  // namespace Test
+}  // namespace test

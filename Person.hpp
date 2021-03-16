@@ -4,8 +4,9 @@
 #include <string>
 #include <string_view>
 #include <iostream>
+#include <ctime>
 
-namespace Test {
+namespace test {
 
 class Person {
   public:
@@ -23,7 +24,7 @@ class Person {
     std::string m_name;
 };
 
-std::ostream& operator<<(std::ostream&, const Test::Person&);
+std::ostream& operator<<(std::ostream&, const test::Person&);
 
 // A free-standing function taking an object as argument
 std::string personName(const Person& person);
@@ -46,6 +47,6 @@ inline Person &fromInt(long long i) {
   return *ptr;
 }
 
-} // Namespace Test
+} // Namespace test
 
 #endif // ifndef PERSON_HPP

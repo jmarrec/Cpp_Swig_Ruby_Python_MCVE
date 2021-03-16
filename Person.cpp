@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace Test {
+namespace test {
 
 Person::Person(const std::string& t_name) noexcept
   : m_name(t_name) { }
@@ -32,11 +32,9 @@ void Person::illuminanceMapMaxValue(const std::string& name, double& minValue, d
 
 //void Person::trySwig(int& i) {
   //i = 10;
-//}
+  //}
 
-
-
-std::ostream& operator<<(std::ostream& os, const Test::Person& p) {
+std::ostream& operator<<(std::ostream& os, const test::Person& p) {
   os << "Person named '" << p.getName() << "'";
   return os;
 }
@@ -45,4 +43,4 @@ std::string personName(const Person& person) {
   return person.getName();
 }
 
-} // namespace Test
+} // namespace test

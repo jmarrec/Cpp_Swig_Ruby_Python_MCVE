@@ -94,6 +94,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${PROJECT_BINARY_DIR}" "${PRO
 #           R E G U L A R    O U P U T    A N D    L I B S            #
 #######################################################################
 
+
+# fPIC
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 set(target_name mylib)
 
 set(${target_name}_src
@@ -101,6 +105,7 @@ set(${target_name}_src
   Person.cpp
   String.hpp
   String.cpp
+  Time.hpp
 )
 
 add_library(${target_name} ${${target_name}_src})
@@ -135,6 +140,7 @@ option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
 # lib swig files
 set(${target_name}_swig_src
   Person.i
+  # Time.i
 )
 
 foreach (SWIG_FILE ${${target_name}_swig_src})

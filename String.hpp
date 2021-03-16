@@ -3,13 +3,14 @@
 
 #include <string>
 #include <vector>
+#include <cwchar>
 
 /** \file String.hpp
  *
  *  All strings are assumed to be UTF-8 encoded std::string.  Note that length of the std::string
  *  may therefore not match number of characters in the std::string. */
 
-namespace Test {
+namespace test {
 
 /** string to std::string. */
 std::string toString(const std::string& s);
@@ -32,6 +33,6 @@ std::string toString(double v);
 /** Load data in istream into string. */
 std::string toString(std::istream& s);
 
-}  // namespace openstudio
+}  // namespace test
 
 #endif  // UTILITIES_CORE_STRING_HPP
