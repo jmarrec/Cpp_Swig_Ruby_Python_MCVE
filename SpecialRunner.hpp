@@ -4,23 +4,21 @@
 #include "Runner.hpp"
 #include "Model.hpp"
 
-namespace Test
-{
+namespace Test {
 // a concrete implementation of the Runner class, for testing purposes
-class SpecialRunner : public Runner{
+class SpecialRunner : public Runner
+{
  public:
-  SpecialRunner(Model model) : model_(std::move(model))
-  {
-
-  }
+  SpecialRunner(Model model) : model_(std::move(model)) {}
 
  protected:
-  Model &get_current_model_impl() override {
+  Model& get_current_model_impl() override {
     return model_;
   }
-    private:
+
+ private:
   Model model_;
 };
-}
+}  // namespace Test
 
 #endif  //TEST_SWIG_SPECIALRUNNER_HPP

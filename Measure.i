@@ -5,7 +5,6 @@
 %module(directors="1") mylib 
 
 %feature("director") Measure;
-%feature("director") Runner;
 
 %include <stl.i>
 %include <std_string.i>

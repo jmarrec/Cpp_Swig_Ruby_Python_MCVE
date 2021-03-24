@@ -21,14 +21,13 @@ class Measure
   Measure& operator=(Measure&&) = delete;
   virtual ~Measure() = default;
 
-  std::vector<std::string> arguments(const Model&) const;
-  bool run(Runner&, const std::vector<std::string>& );
+  virtual std::string name() = 0;
+  bool run(Runner&);
 
  protected:
   // protected virtual here allows us to easily change the internal interface
   // and behavior of measure
-  virtual std::vector<std::string> arguments_impl(const Model&) const = 0;
-  virtual bool run_impl(Runner&, const std::vector<std::string>& ) = 0;
+  virtual bool run_impl(Runner&) = 0;
 };
 
 

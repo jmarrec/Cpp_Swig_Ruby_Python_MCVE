@@ -10,10 +10,10 @@ if(MSVC)
 else()
   target_compile_options(
     cpp_warning_options INTERFACE -Wall -Wextra -Wconversion -Wpedantic -Werror)
-  target_compile_options(cpp_compile_options
-                         INTERFACE -fsanitize=undefined,address)
-  target_link_options(cpp_compile_options INTERFACE
-                      -fsanitize=undefined,address)
+#  target_compile_options(cpp_compile_options
+#                         INTERFACE -fsanitize=undefined,address)
+#  target_link_options(cpp_compile_options INTERFACE
+#                      -fsanitize=undefined,address)
 endif()
 
 # Do not enable compiler specific extensions, for eg on GCC use -std=c++1z
