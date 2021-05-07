@@ -42,7 +42,7 @@ int main(const int argc, const char* argv[]) {
 
   Test::SpecialRunner sr(Test::Model{"MyModel"});
   ruby_measure_from_cpp->run(sr);
- // python_measure_from_cpp->run(sr);
+  python_measure_from_cpp->run(sr);
 
   for (const auto& op : sr.get_current_model().opsPerformed()) {
     std::cout << "Op 'run' from script: " << op << '\n';
