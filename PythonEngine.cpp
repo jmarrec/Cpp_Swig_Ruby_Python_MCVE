@@ -1,6 +1,7 @@
 #include "PythonEngine.hpp"
 
 #include <string>
+#include <stdexcept>
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic push

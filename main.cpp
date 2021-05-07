@@ -17,13 +17,13 @@ int main(const int argc, const char* argv[]) {
   ruby.registerType<Test::Measure*>("Test::Measure *");
   python.registerType<Test::Measure*>("Test::Measure *");
 
-  ruby.exec("require '/home/jason/Cpp_Swig_Ruby_Python_MCVE/ruby/test_measure.rb'");
+  ruby.exec("require '/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/ruby/test_measure.rb'");
   auto ruby_measure = ruby.eval("RubyTestMeasure.new()");
   auto* ruby_measure_from_cpp = ruby.getAs<Test::Measure*>(ruby_measure);
   assert(ruby_measure_from_cpp);
   std::cout << "Ruby measure name: " << ruby_measure_from_cpp->name() << '\n';
 
-  python.exec("import sys\nsys.path.append('/home/jason/Cpp_Swig_Ruby_Python_MCVE/python/')");
+  python.exec("import sys\nsys.path.append('/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/python/')");
   python.exec("import test_measure");
   auto python_measure = python.eval("test_measure.PythonTestMeasure()");
   auto* python_measure_from_cpp = python.getAs<Test::Measure*>(python_measure);

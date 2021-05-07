@@ -6,6 +6,8 @@
 #include <string_view>
 #include <typeinfo>
 #include <functional>
+#include <string>
+#include <stdexcept>
 
 namespace Test {
 struct ScriptObject
@@ -65,7 +67,7 @@ class ScriptEngine
       return lhs.get().before(rhs.get());
     }
   };
-  
+
   std::map<std::reference_wrapper<const std::type_info>, std::string, Compare> types;
 };
 
