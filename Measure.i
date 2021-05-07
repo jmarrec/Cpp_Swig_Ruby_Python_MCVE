@@ -25,11 +25,17 @@
 %module mylib
 %module(directors="1") mylib
 
-%feature("director") Measure;
+
 
 %include <stl.i>
 %include <std_string.i>
 %include <std_vector.i>
+
+%feature("director") Measure;
+
+#if defined(SWIGPYTHON)
+%rename (PythonMeasure) Test::Measure;
+#endif
 
 %{
   #include <Model.hpp>

@@ -5,10 +5,10 @@ sys.path.append("/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/build-modif/Pro
 
 import mylib
 
-class PythonTestMeasure(mylib.Measure):
+class PythonTestMeasure(mylib.PythonMeasure):
     def __init__(self):
-        mylib.Measure.__init__(self)
-        print("Created Object")
+        mylib.PythonMeasure.__init__(self)
+        print("Created Object (Python __init__)")
 
     def run(self, r: mylib.Runner):
         r.get_current_model().pushOp("Op from Python")
