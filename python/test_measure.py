@@ -10,7 +10,7 @@ class PythonTestMeasure(mylib.PythonMeasure):
         mylib.PythonMeasure.__init__(self)
         print("Created Object (Python __init__)")
 
-    def run(self, r: mylib.Runner):
+    def run_impl(self, r: mylib.Runner):
         r.get_current_model().pushOp("Op from Python")
         return True
     def name(self):
