@@ -10,6 +10,7 @@ class Model
  public:
   explicit Model(std::string name);
   const std::string& getName() const;
+  bool setName(const std::string& name);
 
   void pushOp(const std::string& op_name);
 

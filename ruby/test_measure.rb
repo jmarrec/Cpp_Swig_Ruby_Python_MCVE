@@ -6,6 +6,8 @@ class RubyTestMeasure < Mylib::Measure
   end
 
   def run_impl(runner)
+    puts "Ruby Model named: #{runner.get_current_model().getName()}"
+    runner.get_current_model().setName("Ruby Model")
     runner.get_current_model().pushOp("A Ruby Op")
     return true;
   end

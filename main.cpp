@@ -40,9 +40,12 @@ int main(const int argc, const char* argv[]) {
   // is asking for many problems.
   std::cout << "Python measure name: " << python_measure_from_cpp->name() << '\n';
 
-  Test::SpecialRunner sr(Test::Model{"MyModel"});
+  Test::SpecialRunner sr(Test::Model{"C++ Model"});
+  std::cout << "Starting out with a Model in C++ called: " << sr.get_current_model().getName() << '\n';
   ruby_measure_from_cpp->run(sr);
   python_measure_from_cpp->run(sr);
+
+  std::cout << "After Running Ruby and Python: model is named " << sr.get_current_model().getName() << '\n';
 
   for (const auto& op : sr.get_current_model().opsPerformed()) {
     std::cout << "Op 'run' from script: " << op << '\n';

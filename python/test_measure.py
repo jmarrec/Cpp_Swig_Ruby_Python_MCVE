@@ -11,7 +11,9 @@ class PythonTestMeasure(mylib.PythonMeasure):
         print("Created Object (Python __init__)")
 
     def run_impl(self, r: mylib.Runner):
+        print(f"Python Model named: {r.get_current_model().getName()}")
         r.get_current_model().pushOp("Op from Python")
+        r.get_current_model().setName("Python Model")
         return True
     def name(self):
         return "Python Test Measure"

@@ -7,6 +7,12 @@ const std::string& Model::getName() const {
   return name_;
 }
 
+bool Model::setName(const std::string& name) {
+  name_ = name;
+  return true;
+}
+
+
 void Model::pushOp(const std::string& op_name) {
   opsPerformed_.push_back(op_name);
 }
