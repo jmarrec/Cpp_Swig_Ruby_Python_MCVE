@@ -9,7 +9,7 @@ if(MSVC)
   target_compile_options(cpp_warning_options INTERFACE /W4 /Werror)
 else()
   target_compile_options(
-    cpp_warning_options INTERFACE -Wall -Wextra -Wconversion -Wpedantic -Werror)
+    cpp_warning_options INTERFACE -Wall -Wextra -Wconversion -Werror)
 #  target_compile_options(cpp_compile_options
 #                         INTERFACE -fsanitize=undefined,address)
 #  target_link_options(cpp_compile_options INTERFACE
