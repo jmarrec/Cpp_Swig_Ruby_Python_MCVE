@@ -63,7 +63,7 @@ class ScriptEngine
  private:
   struct Compare
   {
-    bool operator()(const std::reference_wrapper<const std::type_info> &lhs, const std::reference_wrapper<const std::type_info>& rhs) {
+    bool operator()(const std::reference_wrapper<const std::type_info> &lhs, const std::reference_wrapper<const std::type_info>& rhs) const {
       return lhs.get().before(rhs.get());
     }
   };
