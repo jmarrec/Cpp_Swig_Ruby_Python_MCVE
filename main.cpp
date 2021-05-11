@@ -70,6 +70,8 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] const char* argv[]) {
     ruby.exec("require_relative '" + ruby_script_path + "'");
   }
 
+
+  // Note: The name of the class is hardcoded here (same on Python side). This is something we would need to get from the measure.xml or something
   auto ruby_measure = ruby.eval("RubyTestMeasure.new()");
   auto* ruby_measure_from_cpp = ruby.getAs<Test::Measure*>(ruby_measure);
   assert(ruby_measure_from_cpp);
