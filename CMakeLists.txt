@@ -79,7 +79,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}"
 
 set(target_name mylib)
 
-set(${target_name}_src Measure.hpp Measure.cpp Model.hpp Model.cpp Runner.hpp
+set(${target_name}_src Measure.hpp Measure.cpp Model.hpp Model.cpp ModelObject.hpp ModelObject.cpp Runner.hpp
                        SpecialRunner.hpp)
 
 add_library(${target_name} SHARED ${${target_name}_src})
@@ -114,6 +114,8 @@ enable_testing()
 include(CTest)
 
 if(BUILD_PYTHON_BINDINGS)
+
+  add_compile_definitions(WITHPYTHON)
 
   set(swig_target_name ${swig_target_name}_python)
 
@@ -157,6 +159,15 @@ if(BUILD_PYTHON_BINDINGS)
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
     COMMAND ${Python_EXECUTABLE} test_python_only.rb)
 
+  # Must call CMake itself in order to set the SWIG_LIB env var for
+  # add_custom_command
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx"
+    COMMAND
+      ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_DIR}" "${SWIG_EXECUTABLE}" "-v"
+      "-python" -external-runtime
+      "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx")
+
 endif()
 
 if(BUILD_RUBY_BINDINGS)
@@ -195,6 +206,16 @@ if(BUILD_RUBY_BINDINGS)
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
     COMMAND ${RUBY_EXECUTABLE} test_ruby_only.py)
 
+
+  # Must call CMake itself in order to set the SWIG_LIB env var for
+  # add_custom_command
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
+    COMMAND
+      ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_DIR}" "${SWIG_EXECUTABLE}" "-v"
+      "-ruby" -external-runtime
+      "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx")
+
 endif()
 
 if(BUILD_RUBY_BINDINGS AND BUILD_PYTHON_BINDINGS)
@@ -221,39 +242,47 @@ if(BUILD_RUBY_BINDINGS AND BUILD_PYTHON_BINDINGS)
 
 endif()
 
-# Must call CMake itself in order to set the SWIG_LIB env var for
-# add_custom_command
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx"
-  COMMAND
-    ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_DIR}" "${SWIG_EXECUTABLE}" "-v"
-    "-python" -external-runtime
+if (BUILD_PYTHON_BINDINGS)
+
+endif()
+
+
+
+if (BUILD_PYTHON_BINDINGS)
+
+  # Executable
+  add_executable(
+    Test
+    main.cpp
+    ScriptEngine.hpp
+    PythonEngine.hpp
+    PythonEngine.cpp
+    RubyEngine.hpp
+    RubyEngine.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
     "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx")
 
-# Must call CMake itself in order to set the SWIG_LIB env var for
-# add_custom_command
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
-  COMMAND
-    ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_DIR}" "${SWIG_EXECUTABLE}" "-v"
-    "-ruby" -external-runtime
-    "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx")
+  target_link_libraries(Test PRIVATE ${target_name} cpp_compile_options
+                                     cpp_warning_options ${RUBY_LIBRARY} Python::Python)
 
-# Executable
-add_executable(
-  Test
-  main.cpp
-  ScriptEngine.hpp
-  PythonEngine.hpp
-  PythonEngine.cpp
-  RubyEngine.hpp
-  RubyEngine.cpp
-  "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
-  "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx")
+  target_include_directories(Test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper" "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper"
+          ${RUBY_INCLUDE_DIRS})
+else()
 
-target_link_libraries(Test PRIVATE ${target_name} cpp_compile_options
-                                   cpp_warning_options ${RUBY_LIBRARY} Python::Python)
+  # Executable
+  add_executable(
+    Test
+    main.cpp
+    ScriptEngine.hpp
+    RubyEngine.hpp
+    RubyEngine.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
+  )
 
-target_include_directories(Test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper" "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper"
-        ${RUBY_INCLUDE_DIRS})
+  target_link_libraries(Test PRIVATE ${target_name} cpp_compile_options
+                                     cpp_warning_options ${RUBY_LIBRARY})
 
+  target_include_directories(Test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper"
+          ${RUBY_INCLUDE_DIRS})
+
+endif()

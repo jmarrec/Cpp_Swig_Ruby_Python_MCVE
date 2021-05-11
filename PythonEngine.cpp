@@ -141,7 +141,7 @@ void* PythonEngine::getAs_impl(ScriptObject& obj, const std::type_info& ti) {
 
   void* return_value = nullptr;
 
-  auto* type = SWIG_TypeQuery(type_name.c_str());
+  auto* type = SWIG_Python_TypeQuery(type_name.c_str());
 
   if (!type) {
     throw std::runtime_error("Unable to find type in SWIG");

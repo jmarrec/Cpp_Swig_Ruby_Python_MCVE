@@ -6,9 +6,19 @@ class RubyTestMeasure < Mylib::Measure
   end
 
   def run_impl(runner)
-    puts "Ruby Model named: #{runner.get_current_model().getName()}"
-    runner.get_current_model().setName("Ruby Model")
-    runner.get_current_model().pushOp("A Ruby Op")
+    m = runner.get_current_model()
+    puts "Ruby Model named: #{m.getName()}"
+    m.setName("Ruby Model")
+    m.pushOp("A Ruby Op")
+
+    puts "Ruby: Model has: #{m.numObjects()} spaces"
+    m.pushObject("Ruby Space")
+    m.numObjects().times do |i|
+      puts "* #{i} = #{m.getObject(i).getName()}"
+    end
+
+    # This crashes
+    m.getObject(0).setName("MODIFIED FROM RUBY")
     return true;
   end
 end

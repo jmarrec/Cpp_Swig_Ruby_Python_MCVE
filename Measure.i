@@ -1,6 +1,7 @@
 #ifndef MEASURE_I
 #define MEASURE_I
 
+#include <stl.i>
 
 %begin %{
   // ... code in begin section ...
@@ -35,14 +36,17 @@
 
 #if defined(SWIGPYTHON)
 %rename (PythonMeasure) Test::Measure;
+//%rename ("Python%s") "";
 #endif
 
 %{
+  #include <ModelObject.hpp>
   #include <Model.hpp>
   #include <Runner.hpp>
   #include <Measure.hpp>
 %}
 
+%include <ModelObject.hpp>
 %include <Model.hpp>
 %include <Runner.hpp>
 %include <Measure.hpp>
