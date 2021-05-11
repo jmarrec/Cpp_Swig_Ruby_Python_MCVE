@@ -247,6 +247,28 @@ if(BUILD_PYTHON_BINDINGS)
       "-python" -external-runtime
       "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx")
 
+  message("Searching for python modules in '${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/python/*.py'")
+  file(GLOB_RECURSE  EXTENSION_PY  FOLLOW_SYMLINKS "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/python/*.py")
+
+  # Temporarily set it here, otherwise it doesn't exist when CMake is run the first time... Should add a DEPENDS variable to embed_files...
+  set (EXTENSION_PY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/python/mylib.py")
+  message("EXTENSION_PY=${EXTENSION_PY}")
+  foreach( _FILE ${EXTENSION_PY} )
+    file(RELATIVE_PATH LOCATION ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY} ${_FILE})
+    list(APPEND FILES ${_FILE})
+    list(APPEND EMBEDDED_PATHS ${LOCATION})
+  endforeach()
+  message("FILES=${FILES}")
+  message("EMBEDDED_PATHS=${EMBEDDED_PATHS}")
+
+  embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT)
+
+  set_source_files_properties(${EMBED_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+
+  source_group(embedded_files FILES ${EMBEDDED_OUTPUT})
+
+  message("EMBEDDED_OUTPUT=${EMBEDDED_OUTPUT}")
+
 endif()
 
 if(BUILD_RUBY_BINDINGS)
@@ -406,6 +428,9 @@ elseif (BUILD_PYTHON_BINDINGS)
     ScriptEngine.hpp
     PythonEngine.hpp
     PythonEngine.cpp
+    ${EMBEDDED_OUTPUT}
+    "${CMAKE_CURRENT_BINARY_DIR}/embedded_files.cxx"
+    "${CMAKE_CURRENT_BINARY_DIR}/embedded_files.hxx"
     "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx"
   )
 
