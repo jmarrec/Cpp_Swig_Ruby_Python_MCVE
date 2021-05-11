@@ -1,7 +1,8 @@
+# import sys
+# sys.path.append("/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/build-modif/Products/python/")
 
-import sys
-
-sys.path.append("/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/build-modif/Products/python/")
+from time import time, ctime
+print('Today is',ctime(time()))
 
 import mylib
 

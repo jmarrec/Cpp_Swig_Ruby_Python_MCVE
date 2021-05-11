@@ -1,4 +1,4 @@
-require '/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/build-modif/Products/ruby/mylib.so'
+# require '/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/build-modif/Products/ruby/mylib.so'
 
 class RubyTestMeasure < Mylib::Measure
   def name
