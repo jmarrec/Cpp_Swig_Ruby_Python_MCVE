@@ -9,7 +9,7 @@ if(MSVC)
   target_compile_options(cpp_warning_options INTERFACE /W4 /Werror)
 else()
   target_compile_options(
-    cpp_warning_options INTERFACE -Wall -Wextra -Wconversion -Werror -Wno-unused-variable)
+    cpp_warning_options INTERFACE -Wall -Wextra -Wconversion -Werror -Wno-unused-variable -Wno-unused-parameter)
 #  target_compile_options(cpp_compile_options
 #                         INTERFACE -fsanitize=undefined,address)
 #  target_link_options(cpp_compile_options INTERFACE
@@ -226,8 +226,9 @@ if(BUILD_PYTHON_BINDINGS)
 #  target_include_directories(${swig_target_name} PRIVATE SYSTEM
 #                                                         ${Python_INCLUDE_DIRS})
 
-  swig_link_libraries(${swig_target_name} PUBLIC ${target_name} PRIVATE
-                      cpp_compile_options)
+  swig_link_libraries(${swig_target_name}
+    PUBLIC ${target_name}
+    PRIVATE cpp_compile_options)
 
 #  if(MSVC)
     swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
@@ -258,16 +259,6 @@ if(BUILD_PYTHON_BINDINGS)
     list(APPEND FILES ${_FILE})
     list(APPEND EMBEDDED_PATHS ${LOCATION})
   endforeach()
-  message("FILES=${FILES}")
-  message("EMBEDDED_PATHS=${EMBEDDED_PATHS}")
-
-  embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT)
-
-  set_source_files_properties(${EMBED_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-
-  source_group(embedded_files FILES ${EMBEDDED_OUTPUT})
-
-  message("EMBEDDED_OUTPUT=${EMBEDDED_OUTPUT}")
 
 endif()
 
@@ -275,14 +266,84 @@ if(BUILD_RUBY_BINDINGS)
 
   add_compile_definitions(WITHRUBY)
   add_compile_definitions(RUBY_EMBEDDED)
+
+  set(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -fvirtual)
+
+  set(MODULE_ROOT "${CONAN_OPENSTUDIO_RUBY_ROOT}")
+  if ("${MODULE_ROOT}" STREQUAL "")
+    set(MODULE_ROOT "${CONAN_OPENSTUDIO_RUBY_ROOT_DEBUG}")
+  endif()
+
+  message("Searching for ruby modules in '${MODULE_ROOT}/lib/**/*.rb'")
+  file(GLOB_RECURSE  EXTENSION_RB  FOLLOW_SYMLINKS "${MODULE_ROOT}/lib/**/*.rb")
+
+  foreach( _FILE ${EXTENSION_RB} )
+    file(RELATIVE_PATH LOCATION ${MODULE_ROOT}/lib ${_FILE})
+    list(APPEND FILES ${_FILE})
+    list(APPEND EMBEDDED_PATHS ${LOCATION})
+  endforeach()
+
+  list(APPEND FILES "${CMAKE_CURRENT_SOURCE_DIR}/embedded_help.rb")
+  list(APPEND EMBEDDED_PATHS "embedded_help.rb")
+
+  set_source_files_properties(EmbeddedScripting.i
+    PROPERTIES CPLUSPLUS ON
+  )
+
+  # TODO: replace with swig_add_library
+  set(SWIG_LIB "/home/julien/Software/Others/swig/swig-build/swig-install/share/swig/4.1.0/")
+
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/embedded_scripting_wrap.cxx"
+    COMMAND ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_LIB}"
+            "${SWIG_EXECUTABLE}"
+            "-ruby"
+            "-c++"
+            -o "${CMAKE_CURRENT_BINARY_DIR}/embedded_scripting_wrap.cxx"
+            "-fvirtual"
+            "-I${PROJECT_SOURCE_DIR}"
+            "-I${PROJECT_BINARY_DIR}"
+            "-D_WINDOWS"
+            "-Fmicrosoft"
+            "${CMAKE_CURRENT_SOURCE_DIR}/EmbeddedScripting.i"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/EmbeddedScripting.i"
+            "${CMAKE_CURRENT_BINARY_DIR}/embedded_files.hxx"
+            "EmbeddedHelp.hpp"
+  )
+
+
   set(swig_target_name ${target_name}_ruby)
 
+  if(TRUE)
   swig_add_library(
     ${swig_target_name}
-    TYPE STATIC
+    TYPE OBJECT
     LANGUAGE ruby OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/Products/ruby"
                   OUTFILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper"
     SOURCES ${${target_name}_swig_src})
+
+  else()
+    set(SWIG_WRAPPER "MeasureRUBY_wrap.cxx")
+    set(SWIG_WRAPPER_FULL_PATH "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/${SWIG_WRAPPER}")
+    set(MODULE "Mylib")
+    set(LOWER_NAME "mylib")
+    set(KEY_I_FILE "Measure.i")
+    add_custom_command(
+      OUTPUT "${SWIG_WRAPPER}"
+      COMMAND ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_LIB}"
+              "${SWIG_EXECUTABLE}"
+              "-ruby" "-c++" "-fvirtual" "-I${PROJECT_SOURCE_DIR}" "-I${PROJECT_BINARY_DIR}"
+              -module "${MODULE}" -initname "${LOWER_NAME}"
+              "-I${PROJECT_SOURCE_DIR}/ruby"
+              -o "${SWIG_WRAPPER_FULL_PATH}"
+              "${SWIG_DEFINES}" ${SWIG_COMMON} "${KEY_I_FILE}"
+      DEPENDS ${this_depends}
+    )
+    add_library(
+      ${swig_target_name} OBJECT
+      ${SWIG_WRAPPER_FULL_PATH}
+    )
+  endif()
 
   set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME
                                                        ${target_name})
@@ -300,9 +361,15 @@ if(BUILD_RUBY_BINDINGS)
   target_include_directories(
     ${swig_target_name} PRIVATE SYSTEM ${RUBY_INCLUDE_DIRS} )
 
-  swig_link_libraries(${swig_target_name} PUBLIC ${target_name} PRIVATE
-                      ${RUBY_LIBRARIES} cpp_compile_options)
-
+  if(TRUE)
+  swig_link_libraries(${swig_target_name}
+    PUBLIC ${target_name}
+    PRIVATE ${RUBY_LIBRARIES} cpp_compile_options)
+  else()
+  target_link_libraries(${swig_target_name}
+    PUBLIC ${target_name}
+    PRIVATE ${RUBY_LIBRARIES} cpp_compile_options)
+  endif()
   add_test(
     NAME test_ruby_only
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
@@ -319,8 +386,27 @@ if(BUILD_RUBY_BINDINGS)
       "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx")
 
   set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx" PROPERTIES COMPILE_FLAGS "-DRUBY_EMBEDDED -Wno-unused-variable" )
+  # -Wno-deprecated-declaration, /wd4996: suppresses deprecated warning
+  # -Wno-register, /wd5033: ISO C++1z does not allow *register* storage class specifier
+  if(MSVC)
+    set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/embedded_scripting_wrap.cxx" PROPERTIES COMPILE_FLAGS "-DRUBY_EMBEDDED" )
+  else()
+    set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/embedded_scripting_wrap.cxx" PROPERTIES COMPILE_FLAGS "-DRUBY_EMBEDDED -Wno-unused-variable" )
+  endif()
 
 endif()
+
+#message("FILES=${FILES}")
+#message("EMBEDDED_PATHS=${EMBEDDED_PATHS}")
+
+embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT)
+
+set_source_files_properties(${EMBED_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+
+source_group(embedded_files FILES ${EMBEDDED_OUTPUT})
+
+# message("EMBEDDED_OUTPUT=${EMBEDDED_OUTPUT}")
+
 
 if(BUILD_RUBY_BINDINGS AND BUILD_PYTHON_BINDINGS)
 
@@ -352,17 +438,21 @@ if (BUILD_PYTHON_BINDINGS AND BUILD_RUBY_BINDINGS)
   add_executable(
     Test
     main.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
     ScriptEngine.hpp
     PythonEngine.hpp
     PythonEngine.cpp
     RubyEngine.hpp
     RubyEngine.cpp
-    "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
+    "${CMAKE_CURRENT_BINARY_DIR}/embedded_scripting_wrap.cxx"
+    ${EMBEDDED_OUTPUT}
     "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx")
 
   target_link_libraries(Test PRIVATE ${target_name} cpp_compile_options
                                      cpp_warning_options)
 
+
+  add_definitions(-DRUBY_EXTCONF_H="osruby_config.h")
 
   add_library(additional_ruby_libs empty.cpp)
   add_library(ruby_libs empty.cpp)
@@ -376,10 +466,12 @@ if (BUILD_PYTHON_BINDINGS AND BUILD_RUBY_BINDINGS)
     #init_Test
     ruby_libs
     ${ALL_RUBY_BINDING_TARGETS}
+    ${target_name}_ruby
     Python::Python
     ${target_name}_python
     )
 
+  # target_link_libraries(Test PUBLIC "-Wl,--allow-multiple-definition" )
 
   if (UNIX AND NOT APPLE)
     target_link_libraries(additional_ruby_libs anl rt)
@@ -405,6 +497,8 @@ elseif (BUILD_RUBY_BINDINGS)
     ScriptEngine.hpp
     RubyEngine.hpp
     RubyEngine.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/embedded_scripting_wrap.cxx"
+    ${EMBEDDED_OUTPUT}
     "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
   )
 

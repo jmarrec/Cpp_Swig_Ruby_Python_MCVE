@@ -1,8 +1,6 @@
 #ifndef MEASURE_I
 #define MEASURE_I
 
-#include <stl.i>
-
 %begin %{
   // ... code in begin section ...
 %}
@@ -26,11 +24,7 @@
 %module mylib
 %module(directors="1") mylib
 
-
-
 %include <stl.i>
-%include <std_string.i>
-%include <std_vector.i>
 
 %feature("director") Measure;
 

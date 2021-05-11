@@ -47,7 +47,7 @@ function(embed_files FILES EMBEDDED_LOCATIONS CXX_OUTPUT_FILES)
       set( EMBEDDED_LOCATION ":/${EMBEDDED_LOCATION}" )
     endif()
 
-    message("CreateEmbeddedSource ${FILE} ${EMBED_SOURCE_FILE} ${i} ${EMBEDDED_LOCATION}")
+    # message("CreateEmbeddedSource ${FILE} ${EMBED_SOURCE_FILE} ${i} ${EMBEDDED_LOCATION}")
 
     add_custom_command(OUTPUT ${EMBED_SOURCE_FILE}
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBED_SOURCE_PATH}
