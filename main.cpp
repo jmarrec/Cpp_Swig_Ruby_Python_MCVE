@@ -18,6 +18,25 @@
 
 int main([[maybe_unused]] const int argc, [[maybe_unused]] const char* argv[]) {
 
+  std::string ruby_script_path;
+  std::string python_script_path;
+
+  constexpr bool enableGetLine = true;
+  if constexpr (enableGetLine) {
+    std::cout << "Enter path to ruby_script: ";
+    std::getline(std::cin, ruby_script_path);
+
+    std::cout << "Enter path to python_script: ";
+    std::getline(std::cin, python_script_path);
+  } else {
+    ruby_script_path = "/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/ruby/test_measure.rb";
+    python_script_path = "/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/python/test_measure.py";
+
+    // Test with relative path, expects to find it in current dir (CURRENT DIR WHERE YOU RUN THE EXE, NOT THE EXE DIR ITSELF)
+    ruby_script_path = "test_measure.rb";
+    python_script_path = "test_measure.py";
+  }
+
   #ifdef WITHRUBY
   Test::RubyEngine ruby;
   #endif
@@ -43,7 +62,14 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] const char* argv[]) {
   #endif
 
   #ifdef WITHRUBY
-  ruby.exec("require '/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/ruby/test_measure.rb'");
+  // ruby.exec("require '/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/ruby/test_measure.rb'");
+  std::cout << "Loading ruby_script '" << ruby_script_path << "'\n";
+  if (auto pos = python_script_path.find_last_of("/\\"); pos != std::string::npos) {
+    ruby.exec("require '" + ruby_script_path + "'");
+  } else {
+    ruby.exec("require_relative '" + ruby_script_path + "'");
+  }
+
   auto ruby_measure = ruby.eval("RubyTestMeasure.new()");
   auto* ruby_measure_from_cpp = ruby.getAs<Test::Measure*>(ruby_measure);
   assert(ruby_measure_from_cpp);
@@ -51,9 +77,31 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] const char* argv[]) {
   #endif
 
   #ifdef WITHPYTHON
-  python.exec("import sys\nsys.path.append('/home/julien/Software/Cpp_Swig_Ruby_Python_MCVE/python/')\nprint(f'{sys.path}')");
-  python.exec("import test_measure");
-  auto python_measure = python.eval("test_measure.PythonTestMeasure()");
+  std::cout << "Loading python_script '" << python_script_path << "'\n";
+  std::string moduleName;
+  auto pos = python_script_path.find_last_of("/\\");
+  if (pos != std::string::npos) {
+    std::string dirName = python_script_path.substr(0, pos);
+    std::string fileName = python_script_path.substr(pos+1);
+    auto lastindex = fileName.find_last_of(".");
+    moduleName = fileName.substr(0, lastindex);
+
+    std::cout << "import sys\nsys.path.append('"+ dirName + "')\nprint(f'{sys.path}')\n\n";
+    python.exec("import sys\nsys.path.append('"+ dirName + "')\nprint(f'{sys.path}')");
+    std::cout << "import " + moduleName << '\n';
+    python.exec("import " + moduleName);
+  } else {
+    auto lastindex = python_script_path.find_last_of(".");
+    moduleName = python_script_path.substr(0, lastindex);
+
+    std::cout << "import sys\nsys.path.append('.')\nprint(f'{sys.path}')\n\n";
+     python.exec("import sys\nsys.path.append('.')\nprint(f'{sys.path}')");
+    std::cout << "import " + moduleName << '\n';
+    python.exec("import " + moduleName);
+    std::cout << "ABBOOOOORT\n";
+  }
+
+  auto python_measure = python.eval(moduleName + ".PythonTestMeasure()");
   auto* python_measure_from_cpp = python.getAs<Test::Measure*>(python_measure);
   assert(python_measure_from_cpp);
   #endif
