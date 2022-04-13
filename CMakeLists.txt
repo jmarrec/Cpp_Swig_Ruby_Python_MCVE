@@ -1,10 +1,24 @@
-cmake_minimum_required(VERSION 3.18.0)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# Do not enable compiler specific extensions, for eg on GCC use -std=c++1z (=c++17) and not -std=gnu++17
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
+cmake_minimum_required(VERSION 3.17.5)
 
+add_library(cpp_warning_options INTERFACE)
+add_library(cpp_compile_options INTERFACE)
+
+target_compile_features(cpp_compile_options INTERFACE cxx_std_17)
+
+if(MSVC)
+  target_compile_options(cpp_warning_options INTERFACE /W4 /Werror)
+else()
+  target_compile_options(
+    cpp_warning_options INTERFACE -Wall -Wextra -Wconversion -Werror)
+#  target_compile_options(cpp_compile_options
+#                         INTERFACE -fsanitize=undefined,address)
+#  target_link_options(cpp_compile_options INTERFACE
+#                      -fsanitize=undefined,address)
+endif()
+
+# Do not enable compiler specific extensions, for eg on GCC use -std=c++1z
+# (=c++17) and not -std=gnu++17
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Use ccache is available, has to be before "project()"
 find_program(CCACHE_PROGRAM ccache)
@@ -13,59 +27,24 @@ if(CCACHE_PROGRAM)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif()
 
-
 project(test_swig VERSION 0.0.1)
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Release' as none was specified.")
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set(CMAKE_BUILD_TYPE
+      Release
+      CACHE STRING "Choose the type of build." FORCE)
   # Set the possible values of build type for cmake-gui
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-    "MinSizeRel" "RelWithDebInfo")
+                                               "MinSizeRel" "RelWithDebInfo")
 endif()
 
-###############################################################################
-#                                  N I N J A                                  #
-###############################################################################
-
-# Xcode/Ninja generators undefined MAKE
-if(CMAKE_GENERATOR MATCHES "Make")
-  set(MAKE "$(MAKE)")
-else()
-  set(MAKE make)
-endif()
-
-# Ninja support: has to be atop for it to take effect before anything else is done
-# Add Color Output if Using Ninja
-macro(AddCXXFlagIfSupported flag test)
-  CHECK_CXX_COMPILER_FLAG(${flag} ${test})
-  if(${${test}})
-    message("adding ${flag}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-  endif()
-endmacro()
-
-if("Ninja" STREQUAL ${CMAKE_GENERATOR})
-  # Clang
-  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    AddCXXFlagIfSupported(-fcolor-diagnostics COMPILER_SUPPORTS_fcolor-diagnostics)
-  endif()
-
-  # g++
-  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    # For some reason it doesn't say its supported, but it works...
-    # AddCXXFlagIfSupported(-fdiagnostics-color COMPILER_SUPPORTS_fdiagnostics-color)
-    message(STATUS "Ninja: Forcing -fdiagnostics-color=always")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
-  endif()
-endif()
-
-
-# Search first in the binary dir, where conan will install finders, then
-# search for modules in the root dir to override cmake ones
-# Start with ROOT, then PROJECT_BINARY_DIR
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/CMake")
+# Search first in the binary dir, where conan will install finders, then search
+# for modules in the root dir to override cmake ones Start with ROOT, then
+# CMAKE_CURRENT_BINARY_DIR
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}"
+     "${PROJECT_SOURCE_DIR}/CMake")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 # Add to include path
@@ -73,69 +52,56 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 # Project source directory
 include_directories("${PROJECT_SOURCE_DIR}")
 
-###############################################################################
-#                         C M A K E    C O N T R O L                          #
-###############################################################################
+# ##############################################################################
+# C M A K E    C O N T R O L                          #
+# ##############################################################################
 
-# High level project configuration
-# Do we actually want everything to go to CMAKE_BINARY_DIR/Products,
-# so that when you build OpenStudioApplication you get both OpenStudio (core) and Application in the same place?
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Products")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Products")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Products")
+# High level project configuration Do we actually want everything to go to
+# CMAKE_BINARY_DIR/Products, so that when you build OpenStudioApplication you
+# get both OpenStudio (core) and Application in the same place?
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Products")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Products")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Products")
 
-set(LIBRARY_SEARCH_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug")
+set(LIBRARY_SEARCH_DIRECTORY
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release"
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug")
 
-# Search first in the binary dir, where conan will install finders, then
-# search for modules in the root dir to override cmake ones
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/CMake")
+# Search first in the binary dir, where conan will install finders, then search
+# for modules in the root dir to override cmake ones
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}"
+     "${PROJECT_SOURCE_DIR}/CMake")
 
-#######################################################################
-#           R E G U L A R    O U P U T    A N D    L I B S            #
-#######################################################################
+# ##############################################################################
+# R E G U L A R    O U P U T    A N D    L I B S            #
+# ##############################################################################
 
 set(target_name mylib)
 
-set(${target_name}_src
-  Person.hpp
-  Person.cpp
-)
+set(${target_name}_src Measure.hpp Measure.cpp Model.hpp Model.cpp ModelObject.hpp ModelObject.cpp Runner.hpp
+                       SpecialRunner.hpp)
 
-add_library(${target_name} ${${target_name}_src})
-target_link_libraries(${target_name}
-  ${${target_name}_depends}
-)
-# Executable
-add_executable(Test
-  main.cpp
-)
+add_library(${target_name} SHARED ${${target_name}_src})
+target_link_libraries(${target_name} PRIVATE cpp_warning_options
+                                             cpp_compile_options)
 
-target_link_libraries(Test
- ${target_name}
-)
-
-
-#######################################################################
-#                               S W I G                               #
-#######################################################################
-
+# ##############################################################################
+# S W I G                               #
+# ##############################################################################
 
 option(BUILD_RUBY_BINDINGS "Build Ruby bindings" ON)
 
 # Build CSharp bindings
 option(BUILD_CSHARP_BINDINGS "Build CSharp bindings" OFF)
 
-# Build Python bindings
-# Requires: SWIG Python
+# Build Python bindings Requires: SWIG Python
 option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
 
-
 # lib swig files
-set(${target_name}_swig_src
-  Person.i
-)
+set(${target_name}_swig_src Measure.i)
 
-foreach (SWIG_FILE ${${target_name}_swig_src})
+foreach(SWIG_FILE ${${target_name}_swig_src})
   message("SWIG_FILE=${SWIG_FILE}")
   set_source_files_properties(${SWIG_FILE} PROPERTIES CPLUSPLUS ON)
 endforeach()
@@ -147,101 +113,176 @@ include(${SWIG_USE_FILE})
 enable_testing()
 include(CTest)
 
+if(BUILD_PYTHON_BINDINGS)
 
-if (BUILD_PYTHON_BINDINGS)
+  add_compile_definitions(WITHPYTHON)
 
   set(swig_target_name ${swig_target_name}_python)
 
-  find_package(Python COMPONENTS Interpreter Development REQUIRED)
+  find_package(
+    Python
+    COMPONENTS Interpreter Development
+    REQUIRED)
 
-  include_directories(SYSTEM ${Python_INCLUDE_DIRS})
-
-  swig_add_library(${swig_target_name}
+  swig_add_library(
+    ${swig_target_name}
     TYPE MODULE
-    LANGUAGE python
-    OUTPUT_DIR "${PROJECT_BINARY_DIR}/Products/python"
-    OUTFILE_DIR "${PROJECT_BINARY_DIR}/python_wrapper"
-    SOURCES ${${target_name}_swig_src}
-  )
+    LANGUAGE python OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/Products/python"
+                    OUTFILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper"
+    SOURCES ${${target_name}_swig_src})
 
-  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME ${target_name})
+  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME
+                                                       ${target_name})
 
-  set_target_properties(${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/python/")
-  set_target_properties(${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python/")
-  set_target_properties(${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python/")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
+                                   "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/python/")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+                                   "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python/")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                   "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python/")
 
+#  target_include_directories(${swig_target_name} PRIVATE SYSTEM
+#                                                         ${Python_INCLUDE_DIRS})
 
-  swig_link_libraries(${swig_target_name} ${target_name})
+  swig_link_libraries(${swig_target_name} PUBLIC ${target_name} PRIVATE
+                      cpp_compile_options)
 
-
-  if (MSVC)
+#  if(MSVC)
     swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
-  endif()
+#  endif()
 
   add_test(
-    NAME test_ruby_only
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-    COMMAND ${Ruby_EXECUTABLE} test_ruby_only.rb
-  )
+    NAME test_python_only
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
+    COMMAND ${Python_EXECUTABLE} test_python_only.rb)
+
+  # Must call CMake itself in order to set the SWIG_LIB env var for
+  # add_custom_command
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx"
+    COMMAND
+      ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_DIR}" "${SWIG_EXECUTABLE}" "-v"
+      "-python" -external-runtime
+      "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx")
 
 endif()
 
 if(BUILD_RUBY_BINDINGS)
   find_package(Ruby REQUIRED)
 
-  include_directories(SYSTEM ${Ruby_INCLUDE_DIRS})
-
   set(swig_target_name ${target_name}_ruby)
 
-  swig_add_library(${swig_target_name}
+  swig_add_library(
+    ${swig_target_name}
     TYPE MODULE
-    LANGUAGE ruby
-    OUTPUT_DIR "${PROJECT_BINARY_DIR}/Products/ruby"
-    OUTFILE_DIR "${PROJECT_BINARY_DIR}/ruby_wrapper"
-    SOURCES ${${target_name}_swig_src}
-  )
+    LANGUAGE ruby OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/Products/ruby"
+                  OUTFILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper"
+    SOURCES ${${target_name}_swig_src})
 
-  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME ${target_name})
+  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME
+                                                       ${target_name})
 
-  set_target_properties(${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/ruby/")
-  set_target_properties(${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ruby/")
-  set_target_properties(${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ruby/")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
+                                   "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/ruby/")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+                                   "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ruby/")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                   "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ruby/")
 
-  swig_link_libraries(${swig_target_name} ${target_name} ${Ruby_LIBRARIES})
+  target_include_directories(
+    ${swig_target_name} PRIVATE SYSTEM ${RUBY_INCLUDE_DIRS} )
+
+  swig_link_libraries(${swig_target_name} PUBLIC ${target_name} PRIVATE
+                      ${RUBY_LIBRARIES} cpp_compile_options)
 
   add_test(
-    NAME test_python_only
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
-    COMMAND ${Python_EXECUTABLE} test_python_only.py
-  )
+    NAME test_ruby_only
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+    COMMAND ${RUBY_EXECUTABLE} test_ruby_only.py)
+
+
+  # Must call CMake itself in order to set the SWIG_LIB env var for
+  # add_custom_command
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
+    COMMAND
+      ${CMAKE_COMMAND} -E env SWIG_LIB="${SWIG_DIR}" "${SWIG_EXECUTABLE}" "-v"
+      "-ruby" -external-runtime
+      "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx")
 
 endif()
-
 
 if(BUILD_RUBY_BINDINGS AND BUILD_PYTHON_BINDINGS)
 
   add_test(
     NAME test_pycall
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-    COMMAND ${Ruby_EXECUTABLE} test_pycall.rb
-  )
+    COMMAND ${RUBY_EXECUTABLE} test_pycall.rb)
 
   add_test(
     NAME test_pycall_workaround
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-    COMMAND ${Ruby_EXECUTABLE} test_pycall_workaround.rb
-  )
+    COMMAND ${RUBY_EXECUTABLE} test_pycall_workaround.rb)
 
   add_test(
     NAME test_pycall_use_cpp_to_convert_pointers
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-    COMMAND ${Ruby_EXECUTABLE} test_pycall_use_cpp_to_convert_pointers.rb
-  )
+    COMMAND ${RUBY_EXECUTABLE} test_pycall_use_cpp_to_convert_pointers.rb)
 
   add_test(
     NAME test_pycall_script
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-    COMMAND ${Ruby_EXECUTABLE} test_pycall_script.rb
+    COMMAND ${RUBY_EXECUTABLE} test_pycall_script.rb)
+
+endif()
+
+if (BUILD_PYTHON_BINDINGS)
+
+endif()
+
+
+
+if (BUILD_PYTHON_BINDINGS)
+
+  # Executable
+  add_executable(
+    Test
+    main.cpp
+    ScriptEngine.hpp
+    PythonEngine.hpp
+    PythonEngine.cpp
+    RubyEngine.hpp
+    RubyEngine.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
+    "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper/SWIGPythonRuntime.hxx")
+
+  target_link_libraries(Test PRIVATE ${target_name} cpp_compile_options
+                                     cpp_warning_options ${RUBY_LIBRARY} Python::Python)
+
+  target_include_directories(Test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper" "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper"
+          ${RUBY_INCLUDE_DIRS})
+else()
+
+  # Executable
+  add_executable(
+    Test
+    main.cpp
+    ScriptEngine.hpp
+    RubyEngine.hpp
+    RubyEngine.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper/SWIGRubyRuntime.hxx"
   )
+
+  target_link_libraries(Test PRIVATE ${target_name} cpp_compile_options
+                                     cpp_warning_options ${RUBY_LIBRARY})
+
+  target_include_directories(Test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/ruby_wrapper"
+          ${RUBY_INCLUDE_DIRS})
 
 endif()
